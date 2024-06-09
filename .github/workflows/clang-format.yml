@@ -31,8 +31,8 @@ jobs:
 
       - name: Pin to a specific version
         run: |
-          $latestChocoVersion = (Get-LatestChocoPackageVersion -TargetVersion $env:LLVM_VERSION -PackageName "llvm")
-          Choco-Install -PackageName llvm -ArgumentList '--allow-downgrade', '--version', $latestChocoVersion
+          $latestChocoVersion = (Resolve-ChocoPackageVersion -TargetVersion $env:LLVM_VERSION -PackageName "llvm")
+          Install-ChocoPackage -PackageName llvm -ArgumentList '--allow-downgrade', '--version', $latestChocoVersion
 
       - name: Run clang-format
         env:
