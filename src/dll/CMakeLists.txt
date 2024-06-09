@@ -6,7 +6,7 @@ set_target_properties(
       OUTPUT_NAME ${PROJECT_NAME}
 )
 
-configure_resource_rc(
+red3ext_configure_resource_rc(
   RED3ext.Dll
   "A script extender for REDengine 3."
 )

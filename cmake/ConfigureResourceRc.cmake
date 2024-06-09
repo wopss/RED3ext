@@ -1,4 +1,4 @@
-function(configure_resource_rc TARGET DESCRIPTION)
+function(red3ext_configure_resource_rc TARGET DESCRIPTION)
   get_target_property(RED3EXT_RESOURCE_PRODUCT_NAME "${TARGET}" OUTPUT_NAME)
 
   set(RED3EXT_RESOURCE_FILE_DESCRIPTION "${DESCRIPTION}")

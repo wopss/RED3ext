@@ -6,7 +6,7 @@ include(ConfigureDefaultOutputDirectories)
 include(ConfigureResourceRc)
 include(ConfigureVersionFromGit)
 
-configure_version_from_git()
+red3ext_configure_version_from_git()
 
 project(
   RED3ext
@@ -17,9 +17,9 @@ project(
 # -----------------------------------------------------------------------------
 # General configuration and variables
 # -----------------------------------------------------------------------------
-configure_default_output_directories()
+red3ext_configure_default_output_directories()
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "ProgramDatabase")
 
@@ -36,6 +36,23 @@ option(RED3EXT_CI_RELEASE "When ON version metadata will not be appended to GIT_
 
 option(RED3EXT_EXTRA_WARNINGS "Enable extra warnings." ON)
 option(RED3EXT_TREAT_WARNINGS_AS_ERRORS "Treat compiler warnings as errors." OFF)
+
+# -----------------------------------------------------------------------------
+# Dependencies - Prerequirement
+#
+# Some of the dependencies are already included in GEEcore with INSTALL or EXPORT
+# targets set to ON. Since this is distributed as a packaged application using
+# a custom INSTALL target, it is not necessary to include these third-party libs
+# in the install directory. Thus, this section disable the INSTALL / EXPORT
+# behavior for these libraries.
+# -----------------------------------------------------------------------------
+include(deps/ConfigureAndIncludeFmt)
+include(deps/ConfigureAndIncludeKangaru)
+
+# -----------------------------------------------------------------------------
+# Dependencies
+# -----------------------------------------------------------------------------
+include(deps/ConfigureAndIncludeGEEcore)
 
 # -----------------------------------------------------------------------------
 # Compiler options for all projects
@@ -55,39 +72,23 @@ add_compile_definitions(
 
 add_compile_options(
   # Enable correct reporting of C++ version, see https://docs.microsoft.com/en-us/cpp/build/reference/zc-cplusplus.
-  $<$<BOOL:MSVC>:/Zc:__cplusplus>
+  /Zc:__cplusplus
 )
 
 add_link_options(
   # Generate debugging information (PDB) file.
-  $<$<BOOL:MSVC>:/DEBUG:FULL>
+  /DEBUG:FULL
 )
 
 # -----------------------------------------------------------------------------
 # Options / configuration related only to this project
 # -----------------------------------------------------------------------------
 if(RED3EXT_EXTRA_WARNINGS)
-  if(MSVC)
-    add_compile_options(/W4)
-  else()
-    message(
-      FATAL_ERROR
-      "The compiler options to enable extra warnings is not known for \
-      '${CMAKE_CXX_COMPILER_ID}'"
-    )
-  endif()
+  add_compile_options(/W4)
 endif()
 
 if(RED3EXT_TREAT_WARNINGS_AS_ERRORS)
-  if(MSVC)
-    add_compile_options(/WX)
-  else()
-    message(
-      FATAL_ERROR
-      "The compiler option to treat warnings as errors is not known for \
-      '${CMAKE_CXX_COMPILER_ID}'"
-    )
-  endif()
+  add_compile_options(/WX)
 endif()
 
 # -----------------------------------------------------------------------------

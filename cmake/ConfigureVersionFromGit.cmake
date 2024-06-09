@@ -1,4 +1,4 @@
-function(configure_version_from_git)
+function(red3ext_configure_version_from_git)
   find_package(Git)
 
   __git_set_default_version_variables()
