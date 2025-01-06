@@ -1,13 +1,24 @@
 ---
-BasedOnStyle: Microsoft
+DisableFormat: true
 ---
 Language: Cpp
+BasedOnStyle: Microsoft
 
 AccessModifierOffset: -4
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
 AlwaysBreakTemplateDeclarations: Yes
+BinPackArguments: false
+BinPackParameters: false
+BreakAfterAttributes: Always
 BreakBeforeBraces: Allman
 BreakConstructorInitializers: BeforeComma
 BreakInheritanceList: BeforeComma
+InsertNewlineAtEOF: true
 KeepEmptyLinesAtTheStartOfBlocks: false
 PointerAlignment: Left
 SpaceAfterTemplateKeyword: false
+
+IntegerLiteralSeparator:
+  Binary: 4
+  BinaryMinDigits: 4

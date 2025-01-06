@@ -1,13 +1,13 @@
 name: Release Workflow
 
 on:
-  push:
-    tags: '*'
+  release:
+    types: [published]
 
 env:
-  RED3EXT_CONFIG: Release
   RED3EXT_VERSION: ${{ github.ref_name }}
-  RED3EXT_HASH_ALGORITHM: SHA256
+  RED3EXT_BUILD_CONFIG: Release
+  RED3EXT_CHECKSUM_ALGORITHM: SHA256
 
 jobs:
   release:
@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -38,7 +38,7 @@ jobs:
         run: |
           cmake `
             --build . `
-            --config ${env:RED3EXT_CONFIG}
+            --config ${env:RED3EXT_BUILD_CONFIG}
 
       - name: Install
         working-directory: build
@@ -46,42 +46,36 @@ jobs:
           cmake `
             --install . `
             --prefix "${{ github.workspace }}/build/install" `
-            --config ${env:RED3EXT_CONFIG}
+            --config ${env:RED3EXT_BUILD_CONFIG}
 
-      - name: Copy license files
-        working-directory: build/install
-        run: |
-          Copy-Item -Path ../../LICENSE.md -Destination ./red3ext/LICENSE.txt
-          Copy-Item -Path ../../THIRD_PARTY_LICENSES.md -Destination ./red3ext/THIRD_PARTY_LICENSES.txt
-
-      - name: Create ZIP
+      - name: Create release package
         working-directory: build/install
         run: 7z a -r red3ext-${env:RED3EXT_VERSION}.zip *.dll *.txt
 
-      - name: Create symbols ZIP
+      - name: Create debug symbols package
         working-directory: build/install
         run: 7z a -r red3ext-symbols-${env:RED3EXT_VERSION}.zip *.pdb
 
-      - name: Compute ZIP's checksum
+      - name: Compute package checksum
         working-directory: build/install
         run: |
-          $Hash = Get-FileHash -Algorithm ${env:RED3EXT_HASH_ALGORITHM} -Path red3ext-${env:RED3EXT_VERSION}.zip
-          $Hash | Format-List
+          $fileHash = Get-FileHash -Algorithm ${env:RED3EXT_CHECKSUM_ALGORITHM} -Path red3ext-${env:RED3EXT_VERSION}.zip
+          $fileHash | Format-List
 
-          $Checksum = $Hash | ForEach-Object { $_.Hash }
-          echo "RED3EXT_ZIP_SHA256=${Checksum}" | Out-File -FilePath ${env:GITHUB_ENV} -Encoding UTF8 -Append
+          $checksum = $fileHash.Hash
+          Add-Content -LiteralPath ${env:GITHUB_ENV} -Encoding UTF8 -Value "RED3EXT_CHECKSUM_PACKAGE=${checksum}"
 
-      - name: Compute symbols ZIP's checksum
+      - name: Compute debug symbols checksum
         working-directory: build/install
         run: |
-          $Hash = Get-FileHash -Algorithm ${env:RED3EXT_HASH_ALGORITHM} -Path red3ext-symbols-${env:RED3EXT_VERSION}.zip
-          $Hash | Format-List
+          $fileHash = Get-FileHash -Algorithm ${env:RED3EXT_CHECKSUM_ALGORITHM} -Path red3ext-symbols-${env:RED3EXT_VERSION}.zip
+          $fileHash | Format-List
 
-          $Checksum = $Hash | ForEach-Object { $_.Hash }
-          echo "RED3EXT_SYMBOLS_SHA256=${Checksum}" | Out-File -FilePath ${env:GITHUB_ENV} -Encoding UTF8 -Append
+          $checksum = $fileHash.Hash
+          Add-Content -LiteralPath ${env:GITHUB_ENV} -Encoding UTF8 -Value "RED3EXT_CHECKSUM_SYMBOLS=${checksum}"
 
       - name: Upload assets
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           append_body: true
           body: |
@@ -89,9 +83,9 @@ jobs:
             ## Checksums
 
             - red3ext-${{ env.RED3EXT_VERSION }}.zip
-              - **${{ env.RED3EXT_HASH_ALGORITHM }}**: ${{ env.RED3EXT_ZIP_SHA256 }}
+              - **${{ env.RED3EXT_CHECKSUM_ALGORITHM }}**: ${{ env.RED3EXT_CHECKSUM_PACKAGE }}
             - red3ext-symbols-${{ env.RED3EXT_VERSION }}.zip
-              - **${{ env.RED3EXT_HASH_ALGORITHM }}**: ${{ env.RED3EXT_SYMBOLS_SHA256 }}
+              - **${{ env.RED3EXT_CHECKSUM_ALGORITHM }}**: ${{ env.RED3EXT_CHECKSUM_SYMBOLS }}
           files: |
             build/install/red3ext-${{ env.RED3EXT_VERSION }}.zip
             build/install/red3ext-symbols-${{ env.RED3EXT_VERSION }}.zip

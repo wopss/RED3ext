@@ -14,15 +14,15 @@ configure_resource_rc(
 set(
   RED3EXT_DLL_HEADER_FILES
     stdafx.hpp
-    resource.hpp
+    Resource.hpp
 )
 
 set(
   RED3EXT_DLL_SRC_FILES
-    main.cpp
+    Main.cpp
 )
 
-source_group(cmake REGULAR_EXPRESSION cmake_pch.*)
+source_group(CMake REGULAR_EXPRESSION cmake_pch.*)
 
 source_group(
   TREE

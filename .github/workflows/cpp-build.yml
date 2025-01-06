@@ -3,7 +3,23 @@ name: Build Workflow
 on:
   push:
     branches: '**'
+    paths:
+      - .github/workflows/cpp-build.yml
+      - cmake/**
+      - deps/**
+
+      - '**.hpp'
+      - '**.cpp'
+      - '**/CMakeLists.txt'
   pull_request:
+    paths:
+      - .github/workflows/cpp-build.yml
+      - cmake/**
+      - deps/**
+
+      - '**.hpp'
+      - '**.cpp'
+      - '**/CMakeLists.txt'
 
 jobs:
   build:
@@ -16,18 +32,20 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
 
-      - name: Create environment variables
+      - name: Set commit SHA environment variable
         run: |
-          $sha = (git rev-parse --short $env:GITHUB_SHA)
-          echo "RED3EXT_COMMIT_SHA=${sha}" | Out-File -FilePath $env:GITHUB_ENV -Encoding UTF8 -Append
+          $sha = (git rev-parse --short ${env:GITHUB_SHA})
+          Add-Content -LiteralPath ${env:GITHUB_ENV} -Encoding UTF8 -Value "RED3EXT_BUILD_COMMIT_SHA=${sha}"
 
+      - name: Set build configuration environment variable
+        run: |
           $config = "${{ matrix.config }}".ToLower()
-          echo "RED3EXT_PRETTY_CONFIG=${config}" | Out-File -FilePath $env:GITHUB_ENV -Encoding UTF8 -Append
+          Add-Content -LiteralPath ${env:GITHUB_ENV} -Encoding UTF8 -Value "RED3EXT_BUILD_CONFIG=${config}"
 
       - name: Create build directory
         run: mkdir build
@@ -57,7 +75,7 @@ jobs:
             --config ${{ matrix.config }}
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: red3ext-${{ env.RED3EXT_PRETTY_CONFIG }}-${{ env.RED3EXT_COMMIT_SHA }}
+          name: red3ext-${{ env.RED3EXT_BUILD_CONFIG }}-${{ env.RED3EXT_BUILD_COMMIT_SHA }}
           path: build/install
