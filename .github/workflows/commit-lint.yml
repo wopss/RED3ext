@@ -1,0 +1,70 @@
+name: Lint Workflow (Commit)
+
+on:
+  push:
+    branches: '**'
+  pull_request:
+
+env:
+  NODE_VERSION: lts/*
+
+jobs:
+  lint:
+    name: Lint the commits
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          check-latest: true
+
+      - name: Install commitlint
+        run: npm install @commitlint/cli @commitlint/config-conventional
+
+      - name: Determine BASE commit (push)
+        if: github.event_name == 'push'
+        env:
+          GIT_COMMIT_SHA: ${{ github.event.before }}
+          GIT_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          COMMIT_SHA="${GIT_COMMIT_SHA}"
+          if [[ "${COMMIT_SHA}" =~ ^0+$ ]]; then
+            echo "'before' is all zeros. This is likely a new branch. Finding a common ancestor with the default branch."
+
+            DEFAULT_BRANCH="${GIT_DEFAULT_BRANCH}"
+            readonly DEFAULT_BRANCH
+
+            COMMIT_SHA="$(git merge-base --fork-point "remotes/origin/${DEFAULT_BRANCH}" || true)"
+            if [ -z "${COMMIT_SHA}" ]; then
+              echo "No common ancestor found, using the first commit in the repository."
+              COMMIT_SHA="$(git rev-list --max-parents=0 --reverse HEAD | head -n 1)"
+            fi
+          fi
+
+          readonly COMMIT_SHA
+          echo "GEECORE_COMMIT_BEFORE=${COMMIT_SHA}" >> "$GITHUB_ENV"
+
+      - name: Determine BASE commit (pull request)
+        if: github.event_name == 'pull_request'
+        env:
+          GIT_COMMIT_SHA: ${{ github.event.pull_request.base.sha }}
+        run: echo "GEECORE_COMMIT_BEFORE=${GIT_COMMIT_SHA}" >> "$GITHUB_ENV"
+
+      - name: Determine HEAD commit
+        env:
+          GIT_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: echo "GEECORE_COMMIT_AFTER=${GIT_COMMIT_SHA}" >> "$GITHUB_ENV"
+
+      - name: Run commitlint
+        run: |
+          npx commitlint \
+            --from "${{ env.GEECORE_COMMIT_BEFORE }}" \
+            --to "${{ env.GEECORE_COMMIT_AFTER }}" \
+            --verbose
